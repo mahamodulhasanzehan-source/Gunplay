@@ -10,27 +10,35 @@
     <div id="brightnessOverlay"></div>
 
     <div id="modeSelectScreen">
-        <h1 class="title-glow">GUNPLAY</h1>
-        <input type="text" id="playerNameInput" placeholder="Enter your name" style="padding: 10px; font-size: 1.2rem; background: rgba(15,15,20,0.85); color: #fff; border: 1px solid #00ff9d; border-radius: 5px; text-align: center; margin-bottom: 20px;">
-        <p style="font-size: 1.5rem; color: #aaa; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 3px;">Select Game Mode</p>
-        <div style="display: flex; gap: 30px;">
+        <h1 class="title-glow" style="margin-top: -50px;">GUNPLAY</h1>
+        <input type="text" id="playerNameInput" placeholder="Enter your name" style="padding: 10px; font-size: 1.2rem; background: rgba(15,15,20,0.85); color: #fff; border: 1px solid #00ff9d; border-radius: 5px; text-align: center; margin-bottom: 20px; z-index: 10; font-family: monospace;">
+        <p style="font-size: 1.5rem; color: #aaa; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 3px; z-index: 10;">Select Game Mode</p>
+        <div style="display: flex; gap: 30px; z-index: 10;">
             <button class="start-btn" id="btnTester" style="margin-top: 0;">Gun Tester</button>
             <button class="start-btn" id="btnSurvival" style="margin-top: 0;">Survival Mode</button>
         </div>
-        <div id="testerQueueCol" style="position: absolute; left: 0; top: 0; bottom: 0; width: 300px; background: rgba(15,15,20,0.85); border-right: 2px solid #00ff9d; padding: 20px; text-align: center; color: white; display: flex; flex-direction: column; overflow-y: auto;">
-            <h2 style="border-bottom: 1px solid #00ff9d; padding-bottom: 10px; margin-bottom: 10px; font-size: 1.2rem;">Gun Tester Duo Queue</h2>
-            <button class="start-btn" id="btnQueueTester" style="margin-top: 0; margin-bottom: 20px; font-size: 1rem; padding: 10px;">Queue for Tester</button>
-            <div id="testerQueueList" style="display: flex; flex-direction: column; gap: 10px;">
-                <div style="color: #666; font-style: italic;">No players queuing...</div>
+        
+        <div id="testerQueueCol" style="position: absolute; left: 0; top: 0; bottom: 0; width: 320px; background: linear-gradient(to right, rgba(15,15,20,0.95), rgba(15,15,20,0.7)); border-right: 2px solid #00ff9d; padding: 20px; text-align: center; color: white; display: flex; flex-direction: column; overflow-y: auto;">
+            <h2 style="border-bottom: 1px solid #00ff9d; padding-bottom: 10px; margin-bottom: 20px; font-size: 1.4rem; color: #00ff9d; text-shadow: 0 0 10px rgba(0,255,157,0.3);">Gun Tester Duo</h2>
+            <button class="start-btn" id="btnQueueTester" style="margin-top: 0; margin-bottom: 25px; font-size: 1.1rem; padding: 12px; width: 100%;">Join Queue</button>
+            <div id="testerQueueList" style="display: flex; flex-direction: column; gap: 12px; flex-grow: 1;">
+                <div style="color: #555; font-style: italic;">No players queuing...</div>
             </div>
         </div>
-        <div id="survivalQueueCol" style="position: absolute; right: 0; top: 0; bottom: 0; width: 300px; background: rgba(15,15,20,0.85); border-left: 2px solid #00ff9d; padding: 20px; text-align: center; color: white; display: flex; flex-direction: column; overflow-y: auto;">
-            <h2 style="border-bottom: 1px solid #00ff9d; padding-bottom: 10px; margin-bottom: 10px; font-size: 1.2rem;">Survival Duo Queue</h2>
-            <button class="start-btn" id="btnQueueSurvival" style="margin-top: 0; margin-bottom: 20px; font-size: 1rem; padding: 10px;">Queue for Survival</button>
-            <div id="survivalQueueList" style="display: flex; flex-direction: column; gap: 10px;">
-                <div style="color: #666; font-style: italic;">No players queuing...</div>
+        
+        <div id="survivalQueueCol" style="position: absolute; right: 0; top: 0; bottom: 0; width: 320px; background: linear-gradient(to left, rgba(15,15,20,0.95), rgba(15,15,20,0.7)); border-left: 2px solid #00ff9d; padding: 20px; text-align: center; color: white; display: flex; flex-direction: column; overflow-y: auto;">
+            <h2 style="border-bottom: 1px solid #00ff9d; padding-bottom: 10px; margin-bottom: 20px; font-size: 1.4rem; color: #00ff9d; text-shadow: 0 0 10px rgba(0,255,157,0.3);">Survival Duo</h2>
+            <button class="start-btn" id="btnQueueSurvival" style="margin-top: 0; margin-bottom: 25px; font-size: 1.1rem; padding: 12px; width: 100%;">Join Queue</button>
+            <div id="survivalQueueList" style="display: flex; flex-direction: column; gap: 12px; flex-grow: 1;">
+                <div style="color: #555; font-style: italic;">No players queuing...</div>
             </div>
         </div>
+    </div>
+
+    <!-- Match Found Overlay -->
+    <div id="matchFoundOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,255,157,0.1); border: 10px solid #00ff9d; box-sizing: border-box; z-index: 500; flex-direction: column; justify-content: center; align-items: center; pointer-events: none; backdrop-filter: blur(5px);">
+        <h1 class="title-glow" style="font-size: 6rem; margin: 0;">MATCH FOUND!</h1>
+        <p style="font-size: 2rem; color: white; font-weight: bold; text-shadow: 0 0 10px black;">Preparing Combat Zone...</p>
     </div>
 
     <div id="startScreen">

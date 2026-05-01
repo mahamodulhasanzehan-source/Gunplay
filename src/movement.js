@@ -34,114 +34,146 @@ export function setupEventListeners() {
         const btn = document.getElementById(btnId);
         
         if (currentQueue === mode) {
-            // Leave queue
             socket.emit('leaveQueue');
             currentQueue = null;
-            btn.innerText = `Queue for ${mode === 'tester' ? 'Tester' : 'Survival'}`;
+            btn.innerText = `Join Queue`;
             btn.style.background = '';
             btn.style.color = '';
         } else {
-            // Join queue
             if (currentQueue) {
-                // Changing queue, visually reset other button
                 const otherBtnId = currentQueue === 'tester' ? 'btnQueueTester' : 'btnQueueSurvival';
                 const otherBtn = document.getElementById(otherBtnId);
-                otherBtn.innerText = `Queue for ${currentQueue === 'tester' ? 'Tester' : 'Survival'}`;
+                otherBtn.innerText = `Join Queue`;
                 otherBtn.style.background = '';
                 otherBtn.style.color = '';
             }
             const name = document.getElementById('playerNameInput').value || 'Anonymous';
             socket.emit('joinQueue', { mode: mode, name });
             currentQueue = mode;
-            btn.innerText = "Leave Queue";
-            btn.style.background = '#555';
-            btn.style.color = '#ccc';
+            btn.innerText = "Leaving Queue...";
+            btn.style.background = 'rgba(157,0,0,0.4)';
+            btn.style.color = '#fff';
         }
     };
 
-    document.getElementById('btnQueueTester').addEventListener('click', () => {
-        toggleQueue('tester', 'btnQueueTester');
-    });
-
-    document.getElementById('btnQueueSurvival').addEventListener('click', () => {
-        toggleQueue('survival', 'btnQueueSurvival');
-    });
+    document.getElementById('btnQueueTester').addEventListener('click', () => toggleQueue('tester', 'btnQueueTester'));
+    document.getElementById('btnQueueSurvival').addEventListener('click', () => toggleQueue('survival', 'btnQueueSurvival'));
 
     window.addEventListener('queueUpdate', (e) => {
         const queues = e.detail;
         
-        const renderQueue = (queueData, containerId, mode) => {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            container.innerHTML = '';
+        // Sync our local currentQueue state with the server data
+        import('./multiplayer.js').then(m => {
+            const myId = m.myId || socket.id;
+            let foundMode = null;
+            if (queues.tester[myId]) foundMode = 'tester';
+            else if (queues.survival[myId]) foundMode = 'survival';
+
+            currentQueue = foundMode;
             
-            const ids = Object.keys(queueData);
-            if (ids.length === 0) {
-                container.innerHTML = '<div style="color: #666; font-style: italic;">No players queuing...</div>';
-                return;
+            // Update buttons
+            const tBtn = document.getElementById('btnQueueTester');
+            const sBtn = document.getElementById('btnQueueSurvival');
+            
+            if (currentQueue === 'tester') {
+                tBtn.innerText = "Leave Queue";
+                tBtn.style.background = 'rgba(157,0,0,0.4)';
+                sBtn.innerText = "Join Queue";
+                sBtn.style.background = '';
+            } else if (currentQueue === 'survival') {
+                sBtn.innerText = "Leave Queue";
+                sBtn.style.background = 'rgba(157,0,0,0.4)';
+                tBtn.innerText = "Join Queue";
+                tBtn.style.background = '';
+            } else {
+                tBtn.innerText = "Join Queue";
+                tBtn.style.background = '';
+                sBtn.innerText = "Join Queue";
+                sBtn.style.background = '';
             }
 
-            for (let id of ids) {
-                const div = document.createElement('div');
-                div.style.padding = '10px';
-                div.style.background = 'rgba(0,255,157,0.2)';
-                div.style.borderRadius = '5px';
-                div.style.display = 'flex';
-                div.style.justifyContent = 'space-between';
-                div.style.alignItems = 'center';
-
-                const nameSpan = document.createElement('span');
-                nameSpan.innerText = queueData[id];
-
-                const btn = document.createElement('button');
-                btn.className = 'start-btn';
-                btn.style.margin = '0';
-                btn.style.padding = '5px 15px';
-                btn.style.fontSize = '1rem';
-                btn.innerText = 'Play Duo';
-
-                btn.onclick = () => {
-                    if (id !== socket.id) {
-                        socket.emit('joinDuo', { targetId: id, mode: mode });
-                    }
-                };
-
-                // Prevent clicking if it's our own name
-                if (id === socket.id) {
-                    btn.disabled = true;
-                    btn.innerText = 'You (Waiting...)';
-                    btn.style.background = '#555';
-                    btn.style.color = '#ccc';
-                    btn.style.boxShadow = 'none';
-                    btn.style.borderColor = '#555';
-                    btn.style.cursor = 'default';
+            const renderQueue = (queueData, containerId, mode) => {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                container.innerHTML = '';
+                
+                const ids = Object.keys(queueData);
+                if (ids.length === 0) {
+                    container.innerHTML = '<div style="color: #666; font-style: italic;">Waiting for recruits...</div>';
+                    return;
                 }
 
-                div.appendChild(nameSpan);
-                div.appendChild(btn);
-                container.appendChild(div);
-            }
-        };
+                for (let id of ids) {
+                    const div = document.createElement('div');
+                    div.style.padding = '12px';
+                    div.style.background = 'rgba(0,255,157,0.1)';
+                    div.style.border = '1px solid rgba(0,255,157,0.2)';
+                    div.style.borderRadius = '5px';
+                    div.style.display = 'flex';
+                    div.style.justifyContent = 'space-between';
+                    div.style.alignItems = 'center';
 
-        renderQueue(queues.tester, 'testerQueueList', 'tester');
-        renderQueue(queues.survival, 'survivalQueueList', 'survival');
+                    const nameSpan = document.createElement('span');
+                    nameSpan.style.fontWeight = 'bold';
+                    nameSpan.innerText = queueData[id];
+
+                    const btn = document.createElement('button');
+                    btn.className = 'start-btn';
+                    btn.style.margin = '0';
+                    btn.style.padding = '6px 12px';
+                    btn.style.fontSize = '0.9rem';
+                    btn.innerText = 'Accept Offer';
+
+                    btn.onclick = () => {
+                        if (id !== myId) {
+                            socket.emit('joinDuo', { targetId: id, mode: mode });
+                        }
+                    };
+
+                    if (id === myId) {
+                        btn.disabled = true;
+                        btn.innerText = 'Awaiting...';
+                        btn.style.background = 'transparent';
+                        btn.style.opacity = '0.5';
+                        btn.style.boxShadow = 'none';
+                        btn.style.cursor = 'default';
+                        div.style.background = 'rgba(0,255,157,0.05)';
+                    }
+
+                    div.appendChild(nameSpan);
+                    div.appendChild(btn);
+                    container.appendChild(div);
+                }
+            };
+
+            renderQueue(queues.tester, 'testerQueueList', 'tester');
+            renderQueue(queues.survival, 'survivalQueueList', 'survival');
+        });
     });
 
     const startGame = (mode, isDuo) => {
         state.gameMode = mode;
         state.multiplayerDuo = isDuo;
-        document.getElementById('modeSelectScreen').style.display = 'none';
-        document.getElementById('startScreen').style.display = 'none';
+        
+        // Hide UI immediately if duo
+        if (isDuo) {
+            const overlay = document.getElementById('matchFoundOverlay');
+            overlay.style.display = 'flex';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                document.getElementById('modeSelectScreen').style.display = 'none';
+                document.getElementById('startScreen').style.display = 'none';
+                document.body.requestPointerLock();
+            }, 2000);
+        } else {
+            document.getElementById('modeSelectScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'none';
+            document.body.requestPointerLock();
+        }
 
         if (!isDuo && currentQueue && socket) {
             socket.emit('leaveQueue');
             currentQueue = null;
-            document.getElementById('btnQueueTester').innerText = 'Queue for Tester';
-            document.getElementById('btnQueueTester').style.background = '';
-            document.getElementById('btnQueueTester').style.color = '';
-            document.getElementById('btnQueueSurvival').innerText = 'Queue for Survival';
-            document.getElementById('btnQueueSurvival').style.background = '';
-            document.getElementById('btnQueueSurvival').style.color = '';
         }
 
         if (mode === 'survival') {
@@ -153,7 +185,6 @@ export function setupEventListeners() {
         buildWeaponMesh(getActiveWeaponId());
         initAudio();
         decodeSounds();
-        document.body.requestPointerLock();
         if (state.gameMode === 'survival') updateSurvivalHUD();
     };
 

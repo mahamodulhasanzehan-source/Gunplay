@@ -55,7 +55,7 @@ async function startServer() {
         socket.on('joinDuo', (data) => {
             // data: { targetId, mode }
             const targetId = data.targetId;
-            if (queues[data.mode][targetId]) {
+            if (queues[data.mode] && queues[data.mode][targetId]) {
                 // Remove both from queue
                 delete queues.tester[targetId];
                 delete queues.survival[targetId];
@@ -66,28 +66,25 @@ async function startServer() {
                 const roomName = 'duo_' + Date.now();
                 socket.join(roomName);
                 
-                // Target needs to join the room
+                // Use safer joining for target
                 const targetSocket = io.sockets.sockets.get(targetId);
                 if (targetSocket) {
                     targetSocket.join(roomName);
-                    // Leave default solo rooms
-                    targetSocket.leave(targetId);
+                    // Tell both players game is starting
+                    io.to(roomName).emit('startDuo', { mode: data.mode, room: roomName, players: [targetId, socket.id] });
+                    
                     PLAYERS[targetId].room = roomName;
-                    PLAYERS[targetId].colorIndex = 1; // Blue
+                    PLAYERS[targetId].colorIndex = 1; 
                     PLAYERS[targetId].mode = data.mode;
-                }
-                
-                socket.leave(socket.id);
-                PLAYERS[socket.id].room = roomName;
-                PLAYERS[socket.id].colorIndex = 2; // Green
-                PLAYERS[socket.id].mode = data.mode;
+                    
+                    PLAYERS[socket.id].room = roomName;
+                    PLAYERS[socket.id].colorIndex = 2;
+                    PLAYERS[socket.id].mode = data.mode;
 
-                // Tell both players game is starting
-                io.to(roomName).emit('startDuo', { mode: data.mode, room: roomName, players: [targetId, socket.id] });
-                
-                // Tell each other they joined
-                io.to(roomName).emit('playerJoined', PLAYERS[targetId]);
-                io.to(roomName).emit('playerJoined', PLAYERS[socket.id]);
+                    // Tell each other they joined
+                    io.to(roomName).emit('playerJoined', PLAYERS[targetId]);
+                    io.to(roomName).emit('playerJoined', PLAYERS[socket.id]);
+                }
             }
         });
 
