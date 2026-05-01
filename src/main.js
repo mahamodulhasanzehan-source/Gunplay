@@ -10,7 +10,7 @@ import './index.css';
 window.onload = () => {
     initScene();
     initMultiplayer();
-    setupEventListeners(socket);
+    setupEventListeners();
 
     // Tester Armory Population
     const cols = { 

@@ -4,8 +4,9 @@ import { updateBrightness, switchSurvivalGun, startReload, toggleMenu, updateSur
 import { buildWeaponMesh } from './weapons.js';
 import { spawnZombies } from './zombies.js';
 import { initAudio, decodeSounds } from './audio.js';
+import { socket } from './multiplayer.js';
 
-export function setupEventListeners(socket) {
+export function setupEventListeners() {
     let pendingMode = null;
 
     document.getElementById('btnTester').addEventListener('click', () => {
@@ -31,8 +32,12 @@ export function setupEventListeners(socket) {
         const name = document.getElementById('playerNameInput').value || 'Anonymous';
         socket.emit('joinQueue', { mode: pendingMode, name });
         const btn = document.getElementById('queueDuoBtn');
-        btn.innerText = "Waiting...";
-        btn.style.pointerEvents = "none";
+        btn.innerText = "Queueing...";
+        
+        // Go back to front screen to see the queue columns so others can click their name
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('modeSelectScreen').style.display = 'flex';
+        document.getElementById('modeSelectScreen').style.flexDirection = 'column';
     });
 
     window.addEventListener('queueUpdate', (e) => {
@@ -42,7 +47,14 @@ export function setupEventListeners(socket) {
             const container = document.getElementById(containerId);
             if (!container) return;
             container.innerHTML = '';
-            for (let id in queueData) {
+            
+            const ids = Object.keys(queueData);
+            if (ids.length === 0) {
+                container.innerHTML = '<div style="color: #666; font-style: italic;">No players queuing...</div>';
+                return;
+            }
+
+            for (let id of ids) {
                 const div = document.createElement('div');
                 div.style.padding = '10px';
                 div.style.background = 'rgba(0,255,157,0.2)';
@@ -70,7 +82,7 @@ export function setupEventListeners(socket) {
                 // Prevent clicking if it's our own name
                 if (id === socket.id) {
                     btn.disabled = true;
-                    btn.innerText = 'You';
+                    btn.innerText = 'You (Waiting...)';
                     btn.style.background = '#555';
                     btn.style.color = '#ccc';
                     btn.style.boxShadow = 'none';
