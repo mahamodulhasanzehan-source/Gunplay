@@ -1,6 +1,3 @@
-export const base64Gun = "[Placeholder for audio]";
-export const base64Sniper = "[Placeholder for audio]";
-
 export const WEAPONS = {
     pistol: { id: 'pistol', cat: 'sidearms', name: "M1911 Pistol", type: 'semi', rpm: 240, damage: 12, pierce: 1, speed: 100, color: "#aaddff" },
     gs50: { id: 'gs50', cat: 'sidearms', name: ".50 GS (Deagle)", type: 'semi', rpm: 180, damage: 25, pierce: 3, hitscan: true, color: "#e0e0e0" },

@@ -1,4 +1,5 @@
-import { base64Gun, base64Sniper, WEAPONS, SURVIVAL_WEAPONS, state } from './constants.js';
+import { WEAPONS, SURVIVAL_WEAPONS, state } from './constants.js';
+import { base64Gun, base64Sniper } from './audioData.js';
 
 export let audioCtx;
 export let buffGun = null;
@@ -8,11 +9,15 @@ export const SOUND_THROTTLE = { shoot: 0, hit: 0, die: 0 };
 export async function decodeSounds() {
     if (!audioCtx) return;
     try {
-        const r1 = await fetch(base64Gun);
+        const src1 = base64Gun.startsWith('data:') ? base64Gun : 'data:audio/mp3;base64,' + base64Gun;
+        const r1 = await fetch(src1);
         const ab1 = await r1.arrayBuffer();
         buffGun = await audioCtx.decodeAudioData(ab1);
-        
-        const r2 = await fetch(base64Sniper);
+    } catch(e) {}
+    
+    try {
+        const src2 = base64Sniper.startsWith('data:') ? base64Sniper : 'data:audio/mp3;base64,' + base64Sniper;
+        const r2 = await fetch(src2);
         const ab2 = await r2.arrayBuffer();
         buffSniper = await audioCtx.decodeAudioData(ab2);
     } catch(e) {}
