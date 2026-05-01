@@ -27,17 +27,44 @@ export function setupEventListeners() {
         updateBrightness();
     });
 
-    document.getElementById('queueDuoBtn').addEventListener('click', () => {
+    let currentQueue = null;
+
+    const toggleQueue = (mode, btnId) => {
         if (!socket) return;
-        const name = document.getElementById('playerNameInput').value || 'Anonymous';
-        socket.emit('joinQueue', { mode: pendingMode, name });
-        const btn = document.getElementById('queueDuoBtn');
-        btn.innerText = "Queueing...";
+        const btn = document.getElementById(btnId);
         
-        // Go back to front screen to see the queue columns so others can click their name
-        document.getElementById('startScreen').style.display = 'none';
-        document.getElementById('modeSelectScreen').style.display = 'flex';
-        document.getElementById('modeSelectScreen').style.flexDirection = 'column';
+        if (currentQueue === mode) {
+            // Leave queue
+            socket.emit('leaveQueue');
+            currentQueue = null;
+            btn.innerText = `Queue for ${mode === 'tester' ? 'Tester' : 'Survival'}`;
+            btn.style.background = '';
+            btn.style.color = '';
+        } else {
+            // Join queue
+            if (currentQueue) {
+                // Changing queue, visually reset other button
+                const otherBtnId = currentQueue === 'tester' ? 'btnQueueTester' : 'btnQueueSurvival';
+                const otherBtn = document.getElementById(otherBtnId);
+                otherBtn.innerText = `Queue for ${currentQueue === 'tester' ? 'Tester' : 'Survival'}`;
+                otherBtn.style.background = '';
+                otherBtn.style.color = '';
+            }
+            const name = document.getElementById('playerNameInput').value || 'Anonymous';
+            socket.emit('joinQueue', { mode: mode, name });
+            currentQueue = mode;
+            btn.innerText = "Leave Queue";
+            btn.style.background = '#555';
+            btn.style.color = '#ccc';
+        }
+    };
+
+    document.getElementById('btnQueueTester').addEventListener('click', () => {
+        toggleQueue('tester', 'btnQueueTester');
+    });
+
+    document.getElementById('btnQueueSurvival').addEventListener('click', () => {
+        toggleQueue('survival', 'btnQueueSurvival');
     });
 
     window.addEventListener('queueUpdate', (e) => {
@@ -106,6 +133,17 @@ export function setupEventListeners() {
         document.getElementById('modeSelectScreen').style.display = 'none';
         document.getElementById('startScreen').style.display = 'none';
 
+        if (!isDuo && currentQueue && socket) {
+            socket.emit('leaveQueue');
+            currentQueue = null;
+            document.getElementById('btnQueueTester').innerText = 'Queue for Tester';
+            document.getElementById('btnQueueTester').style.background = '';
+            document.getElementById('btnQueueTester').style.color = '';
+            document.getElementById('btnQueueSurvival').innerText = 'Queue for Survival';
+            document.getElementById('btnQueueSurvival').style.background = '';
+            document.getElementById('btnQueueSurvival').style.color = '';
+        }
+
         if (mode === 'survival') {
             document.querySelector('.hud-container').style.display = 'none';
             document.getElementById('survivalHud').style.display = 'block';
@@ -129,7 +167,15 @@ export function setupEventListeners() {
     });
 
     document.getElementById('exitBtn').addEventListener('click', () => {
-        window.location.reload();
+        if (state.gameMode !== null) {
+            // Already matched/started game, exit means leave match
+            window.location.reload();
+        } else {
+            // Just returning from mode select screen before starting
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('modeSelectScreen').style.display = 'flex';
+            pendingMode = null;
+        }
     });
 
     document.addEventListener('pointerlockchange', () => {
