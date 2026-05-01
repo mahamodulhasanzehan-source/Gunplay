@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gunplay</title>
+</head>
+<body>
+    <!-- Brightness Layer for Survival & Tester Mode -->
+    <div id="brightnessOverlay"></div>
+
+    <div id="modeSelectScreen">
+        <h1 class="title-glow">GUNPLAY</h1>
+        <p style="font-size: 1.5rem; color: #aaa; margin-bottom: 50px; text-transform: uppercase; letter-spacing: 3px;">Select Game Mode</p>
+        <div style="display: flex; gap: 30px;">
+            <button class="start-btn" id="btnTester">Gun Tester</button>
+            <button class="start-btn" id="btnSurvival">Survival Mode</button>
+        </div>
+    </div>
+
+    <div id="startScreen">
+        <h1 class="title-glow" style="font-size: 4rem;">Gunplay</h1>
+        <p style="font-size: 1.2rem; color: #bbb;">Multiplayer Enabled</p>
+        <button class="start-btn" id="startBtn">Click to Start</button>
+        <p style="margin-top: 20px; color: #888;">Ensure audio is enabled.</p>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="crosshair"></div>
+    <div id="scopeOverlay">
+        <div class="scope-line horizontal"></div>
+        <div class="scope-line vertical"></div>
+        <div class="scope-circle"></div>
+    </div>
+
+    <!-- HUDs -->
+    <div class="hud-container">
+        <div class="hud-panel">
+            <div class="hud-text-small">Current Weapon</div>
+            <div class="hud-text-large" id="hudWeaponName">M1911 Pistol</div>
+        </div>
+        <div class="hud-panel" id="hudZombiesKilled">
+            <div class="hud-text-small">Threats Neutralized</div>
+            <div class="hud-text-large" id="hudZombieCount">0</div>
+        </div>
+    </div>
+
+    <div id="survivalHud" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 25; transition: background-color 0.1s;">
+        <div style="position: absolute; top: 20px; left: 20px;">
+            <div style="width: 250px; height: 25px; background: rgba(100,0,0,0.8); border: 2px solid #000; border-radius: 5px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.8);">
+                <div id="survHealthBar" style="width: 100%; height: 100%; background: #e44;"></div>
+            </div>
+            <div id="survHealthText" style="color: white; font-size: 1.1rem; font-weight: bold; text-shadow: 1px 1px 3px black; margin-top: 5px;">50 / 50 HP</div>
+        </div>
+        <div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); text-align: center;">
+            <div id="survWaveText" style="font-size: 2.2rem; font-weight: bold; color: white; text-shadow: 2px 2px 5px black;">Wave Starts in: 5</div>
+            <div id="survZombiesLeftText" style="font-size: 1.3rem; color: white; text-shadow: 1px 1px 3px black; margin-top: 5px;"></div>
+        </div>
+        <div style="position: absolute; top: 20px; right: 30px;">
+            <div id="survMoneyText" style="font-size: 2.8rem; font-weight: bold; color: #27AE60; text-shadow: 2px 2px 5px black;">$0</div>
+        </div>
+        <div style="position: absolute; bottom: 30px; right: 30px; text-align: right;">
+            <div id="survAmmoText" style="font-size: 2.5rem; font-weight: bold; color: white; text-shadow: 2px 2px 5px black;">15 / 150</div>
+            <div id="survGunNameText" style="font-size: 1.4rem; color: #aaa; text-shadow: 1px 1px 3px black; font-weight: 600;">Basic Pistol</div>
+        </div>
+    </div>
+
+    <!-- GameOver / Victory Overlays -->
+    <div id="survivalGameOver" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 250; flex-direction: column; justify-content: center; align-items: center; color: white; backdrop-filter: blur(5px);">
+        <h1 style="color: #E44; font-size: 6rem; text-shadow: 0 0 30px #E44; margin-bottom: 20px; font-weight: 900;">YOU DIED</h1>
+        <button class="start-btn" onclick="window.restartSurvival()">Restart</button>
+    </div>
+    <div id="survivalVictory" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 250; flex-direction: column; justify-content: center; align-items: center; color: white; backdrop-filter: blur(5px);">
+        <h1 style="color: #27AE60; font-size: 6rem; text-shadow: 0 0 30px #27AE60; margin-bottom: 10px; font-weight: 900;">VICTORY!</h1>
+        <p style="font-size: 2rem; margin-bottom: 30px; text-align: center;">You survived Infinite Zig-Zag World in 3D!</p>
+        <button class="start-btn" onclick="window.restartSurvival()">Play Again</button>
+    </div>
+
+    <div class="interaction-prompt" id="interactionPrompt">Press [F] to Open Armory</div>
+
+    <div class="controls-help">[W,A,S,D]: Move | [SPACE]: Jump | [SHIFT]: Run<br>
+        [C]: Slide |[SCROLL WHEEL]: Swap Weapons<br>[LEFT CLICK]: Shoot |[RIGHT CLICK]: ADS (Aim)<br>[B]: Toggle Fire Mode | [F]: Armory |[P]: Spawns Menu | [V]: Audio Settings | [T]: Toggle Spawns<br>[ESC] or [CTRL]: Pause Game
+    </div>
+
+    <!-- Menus and Overlays -->
+    <div class="modal-overlay" id="shopModal">
+        <div class="modal-window">
+            <div class="modal-header">Black Market Armory</div>
+            <div class="armory-layout">
+                <div class="armory-column" id="col-sidearms"><div class="column-title">Sidearms (Slot 2)</div></div>
+                <div class="armory-column" id="col-smg"><div class="column-title">SMGs</div></div>
+                <div class="armory-column" id="col-ar"><div class="column-title">Assault Rifles</div></div>
+                <div class="armory-column" id="col-marksman"><div class="column-title">Marksman</div></div>
+                <div class="armory-column" id="col-sniper"><div class="column-title">Snipers</div></div>
+                <div class="armory-column" id="col-special"><div class="column-title">Special</div></div>
+            </div>
+            <div style="text-align: center; color: #666; margin-top: 10px;">Select a weapon. Press [ESC] or[F] to close.</div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="survivalShopModal">
+        <div class="modal-window" style="width: 1000px; max-width: 95%;">
+            <div class="modal-header" style="color: #F2C94C; border-bottom: 2px solid rgba(242, 201, 76, 0.3); text-shadow: 0 0 10px rgba(242, 201, 76, 0.4);">BUY STATION</div>
+            <div class="armory-layout">
+                <div class="armory-column" id="col-survival">
+                    <div class="column-title" style="color: #F2C94C;">Survival</div>
+                    <div class="weapon-btn" onclick="window.buyBandAid()">
+                        <span class="weapon-btn-name">Band Aid</span>
+                        <span class="weapon-btn-stats" style="color: #27AE60; font-weight: bold; font-size: 1rem;">$50</span>
+                    </div>
+                </div>
+                <div class="armory-column" id="col-basic-guns">
+                    <div class="column-title" style="color: #F2C94C;">Basic Guns</div>
+                    <div class="weapon-btn" id="btnBuyPistol" onclick="window.buySurvivalGun('pistol')">
+                        <span class="weapon-btn-name">Basic Pistol</span>
+                        <span class="weapon-btn-stats" id="costPistol" style="color: #27AE60; font-weight: bold; font-size: 1rem;">Ammo $10</span>
+                    </div>
+                    <div class="weapon-btn" id="btnBuySMG" onclick="window.buySurvivalGun('smg')">
+                        <span class="weapon-btn-name">Basic SMG</span>
+                        <span class="weapon-btn-stats" id="costSMG" style="color: #27AE60; font-weight: bold; font-size: 1rem;">Buy $100</span>
+                    </div>
+                    <div class="weapon-btn" id="btnBuyAR" onclick="window.buySurvivalGun('ak47')">
+                        <span class="weapon-btn-name">Basic AR</span>
+                        <span class="weapon-btn-stats" id="costAR" style="color: #27AE60; font-weight: bold; font-size: 1rem;">Buy $300</span>
+                    </div>
+                </div>
+                <div class="armory-column" id="col-upgrades">
+                    <div class="column-title" style="color: #F2C94C;">Upgrades</div>
+                    <div class="weapon-btn" id="btnBuyGs50" onclick="window.buySurvivalGun('gs50')">
+                        <span class="weapon-btn-name">.50 Cal (Grekova)</span>
+                        <span class="weapon-btn-stats" id="costGs50" style="color: #27AE60; font-weight: bold; font-size: 1rem;">Buy $100</span>
+                    </div>
+                    <div class="weapon-btn" id="btnBuyVector" onclick="window.buySurvivalGun('vector_smg')">
+                        <span class="weapon-btn-name">Vector</span>
+                        <span class="weapon-btn-stats" id="costVector" style="color: #27AE60; font-weight: bold; font-size: 1rem;">Buy $600</span>
+                    </div>
+                    <div class="weapon-btn" id="btnBuyOdin" onclick="window.buySurvivalGun('odin')">
+                        <span class="weapon-btn-name">Odin</span>
+                        <span class="weapon-btn-stats" id="costOdin" style="color: #27AE60; font-weight: bold; font-size: 1rem;">Buy $800</span>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; color: #666; margin-top: 10px;">Press [ESC] or [F] to close.</div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="probModal">
+        <div class="modal-window" style="width: 500px; height: auto;">
+            <div class="modal-header">Simulation Parameters</div>
+            <div style="display: flex; align-items: center; gap: 20px; padding: 25px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                <label style="color: #fff; font-weight: bold; white-space: nowrap;">Double Spawn Chance:</label>
+                <input type="range" id="probSlider" min="0" max="100" value="10" style="flex-grow:1; cursor:pointer;">
+                <span id="probValueDisplay" style="color: var(--neon-accent); font-weight: bold; width: 50px; text-align: right;">10%</span>
+            </div>
+            <div style="text-align: center; color: #666; margin-top: 10px;">Press [ESC] or [P] to close.</div>
+        </div>
+    </div>
+
+    <!-- Brightness Modal -->
+    <div class="modal-overlay" id="brightModal">
+        <div class="modal-window" style="width: 500px; height: auto;">
+            <div class="modal-header">Display Settings</div>
+            <div style="display: flex; align-items: center; gap: 20px; padding: 25px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                <label style="color: #fff; font-weight: bold; white-space: nowrap;">Brightness:</label>
+                <input type="range" id="brightSlider" min="0" max="100" value="40" style="flex-grow:1; cursor:pointer;">
+                <span id="brightValueDisplay" style="color: var(--neon-accent); font-weight: bold; width: 50px; text-align: right;">40%</span>
+            </div>
+            <div style="text-align: center; color: #666; margin-top: 10px;">Press [ESC] or [P] to close.</div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="volModal">
+        <div class="modal-window" style="width: 500px; height: auto;">
+            <div class="modal-header">Audio Settings</div>
+            <div style="display: flex; align-items: center; gap: 20px; padding: 25px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                <label style="color: #fff; font-weight: bold; white-space: nowrap;">Gun Volume:</label>
+                <input type="range" id="volSlider" min="0" max="100" value="50" style="flex-grow:1; cursor:pointer;">
+                <span id="volValueDisplay" style="color: var(--neon-accent); font-weight: bold; width: 50px; text-align: right;">50%</span>
+            </div>
+            <div style="text-align: center; color: #666; margin-top: 10px;">Press [ESC] or [V] to close. Note: Does not affect special weapons.</div>
+        </div>
+    </div>
+    
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
+
