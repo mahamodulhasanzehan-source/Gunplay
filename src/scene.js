@@ -39,8 +39,8 @@ export function initScene() {
     viewmodel.position.set(0.3, -0.25, -0.5); 
     pitchObj.add(viewmodel);
 
-    scene.add(new THREE.AmbientLight(0x404040, 2));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
     dirLight.position.set(10, 20, 10);
     scene.add(dirLight);
 

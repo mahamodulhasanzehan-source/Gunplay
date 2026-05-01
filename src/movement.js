@@ -38,6 +38,10 @@ export function setupEventListeners() {
         if (state.gameMode === 'survival') updateSurvivalHUD();
     });
 
+    document.getElementById('exitBtn').addEventListener('click', () => {
+        window.location.reload();
+    });
+
     document.addEventListener('pointerlockchange', () => {
         const isEndgame = state.gameMode === 'survival' && (state.survival.waveState === 'GAMEOVER' || state.survival.waveState === 'VICTORY');
         
@@ -45,10 +49,16 @@ export function setupEventListeners() {
             document.getElementById('startScreen').style.display = 'flex';
             document.getElementById('startScreen').querySelector('h1').innerText = "PAUSED";
             document.getElementById('startBtn').innerText = "Resume";
+            if (state.gameMode === 'tester') {
+                document.getElementById('exitBtn').style.display = 'block';
+            } else {
+                document.getElementById('exitBtn').style.display = 'none';
+            }
             state.paused = true; 
         } else if (document.pointerLockElement === document.body && !isEndgame) {
             state.paused = false;
             document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('exitBtn').style.display = 'none';
         }
     });
 
