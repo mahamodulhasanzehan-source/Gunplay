@@ -49,8 +49,8 @@ export const SURVIVAL_ZOMBIES = {
     "ThreeBlockBlueZombie": { color: 0x0000b4, height: 3, scale: 1, hp: 70, speed: 15, dmg: 2, dmgChance: 30, bonusDmg: 1, cooldown: 0.7, money: 100 },
     "TwoBlockPurpleZombie": { color: 0x800080, height: 2, scale: 1, hp: 60, speed: 20, dmg: 3, dmgChance: 20, bonusDmg: 3, cooldown: 0.5, money: 140 },
     "ThreeBlockPurpleZombie": { color: 0x800080, height: 3, scale: 1, hp: 100, speed: 20, dmg: 3, dmgChance: 20, bonusDmg: 3, cooldown: 0.5, money: 160 },
-    "TwoBlockBlackZombie": { color: 0x111111, height: 2, scale: 1, hp: 200, speed: 14.28, dmg: 4, dmgChance: 30, bonusDmg: 3, cooldown: 0.1, money: 200, blitz: true },
-    "ThreeBlockBlackZombie": { color: 0x111111, height: 3, scale: 1, hp: 250, speed: 14.28, dmg: 4, dmgChance: 30, bonusDmg: 3, cooldown: 0.1, money: 250, blitz: true }
+    "TwoBlockBlackZombie": { color: 0x111111, height: 2, scale: 1, hp: 200, speed: 42.84, dmg: 4, dmgChance: 30, bonusDmg: 3, cooldown: 0.1, money: 200, blitz: true },
+    "ThreeBlockBlackZombie": { color: 0x111111, height: 3, scale: 1, hp: 250, speed: 42.84, dmg: 4, dmgChance: 30, bonusDmg: 3, cooldown: 0.1, money: 250, blitz: true }
 };
 
 export const WAVE_CONFIGS = {

@@ -4,13 +4,13 @@ import { state, WEAPONS } from './constants.js';
 import { getActiveWeaponId, toggleMenu } from './ui.js';
 import { buildWeaponMesh } from './weapons.js';
 import { gameLoop } from './game.js';
-import { initMultiplayer } from './multiplayer.js';
+import { initMultiplayer, socket } from './multiplayer.js';
 import './index.css';
 
 window.onload = () => {
     initScene();
-    setupEventListeners();
     initMultiplayer();
+    setupEventListeners(socket);
 
     // Tester Armory Population
     const cols = { 

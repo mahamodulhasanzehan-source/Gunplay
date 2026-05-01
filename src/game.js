@@ -457,7 +457,7 @@ export function update() {
                         document.exitPointerLock(); document.getElementById('survivalGameOver').style.display = 'flex'; playSound('die');
                     }
                     
-                    if (z.userData.blitz) z.userData.stunnedUntil = Date.now() + 1300;
+                    if (z.userData.blitz) z.userData.stunnedUntil = Date.now() + 2000;
                     else if (z.speed >= 20) z.userData.stunnedUntil = Date.now() + 1000;
                 }
             }

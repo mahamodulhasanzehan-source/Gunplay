@@ -8,8 +8,8 @@ export let players = {};
 export let myId = null;
 
 const playerMat = new THREE.MeshLambertMaterial({ color: 0xff4444 });
-const headGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-const bodyGeo = new THREE.BoxGeometry(1.0, 1.2, 0.5);
+const headGeo = new THREE.BoxGeometry(1, 1, 1);
+const bodyGeo = new THREE.BoxGeometry(1, 1.5, 0.5);
 
 export function initMultiplayer() {
     socket = io();
@@ -19,6 +19,18 @@ export function initMultiplayer() {
         for (let id in data.players) {
             if (id !== myId) addPlayer(data.players[id]);
         }
+    });
+
+    socket.on('queueUpdate', (queues) => {
+        // UI code expects this to update the lobby screen columns
+        const evt = new CustomEvent('queueUpdate', { detail: queues });
+        window.dispatchEvent(evt);
+    });
+
+    socket.on('startDuo', (data) => {
+        // We received the paired match
+        const evt = new CustomEvent('startDuo', { detail: data });
+        window.dispatchEvent(evt);
     });
 
     socket.on('playerJoined', (data) => {
@@ -96,26 +108,29 @@ export function initMultiplayer() {
 function addPlayer(data) {
     if (players[data.id]) return; // already added
 
+    const color = data.colorIndex === 1 ? 0x0000ff : (data.colorIndex === 2 ? 0x00ff00 : 0xff4444);
+    const pMat = new THREE.MeshLambertMaterial({ color });
+
     const group = new THREE.Group();
     group.position.set(data.x, data.y, data.z);
     
     // Head setup so it can pitch up and down
     const headObj = new THREE.Object3D(); 
-    headObj.position.y = 0.6; // relative to body center
+    headObj.position.y = 1.0; // relative to body center
     
-    const headMesh = new THREE.Mesh(headGeo, playerMat);
+    const headMesh = new THREE.Mesh(headGeo, pMat);
     // Move head mesh slightly so its origin is at the neck
     headObj.add(headMesh);
 
     // Eyes
     const eyeGeo = new THREE.BoxGeometry(0.2, 0.2, 0.1); 
     const eyeMat = new THREE.MeshBasicMaterial({color: 0x000000});
-    const eyeL = new THREE.Mesh(eyeGeo, eyeMat); eyeL.position.set(-0.25, 0, -0.41);
-    const eyeR = new THREE.Mesh(eyeGeo, eyeMat); eyeR.position.set(0.25, 0, -0.41);
+    const eyeL = new THREE.Mesh(eyeGeo, eyeMat); eyeL.position.set(-0.3, 0, -0.51);
+    const eyeR = new THREE.Mesh(eyeGeo, eyeMat); eyeR.position.set(0.3, 0, -0.51);
     headMesh.add(eyeL); headMesh.add(eyeR);
 
     // The body
-    const bodyMesh = new THREE.Mesh(bodyGeo, playerMat);
+    const bodyMesh = new THREE.Mesh(bodyGeo, pMat);
     bodyMesh.position.y = 0; 
     
     group.add(bodyMesh);
@@ -126,6 +141,6 @@ function addPlayer(data) {
 
     scene.add(group);
     
-    // give them a bounding radius for hit detection
-    players[data.id] = { id: data.id, mesh: group, headObj, radius: 0.8, height: 2 };
+    // give them a bounding radius for hit detection (height=2.5 now -> head=1 + body=1.5)
+    players[data.id] = { id: data.id, mesh: group, headObj, radius: 0.8, height: 2.5 };
 }

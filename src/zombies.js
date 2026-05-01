@@ -46,7 +46,15 @@ export function spawnZombies(count, forceType = null) {
 export function spawnSurvivalZombies(zombieData) {
     if (!zombieData) return;
     for (const[type, count] of Object.entries(zombieData)) {
-        for (let i = 0; i < count; i++) {
+        
+        let actualCount = count;
+        if (state.multiplayerDuo) {
+            if (type.includes('Green') || type.includes('Red') || type === 'NormalZombie') {
+                actualCount = count * 2;
+            }
+        }
+
+        for (let i = 0; i < actualCount; i++) {
             const zData = SURVIVAL_ZOMBIES[type];
             const angle = Math.random() * Math.PI * 2; const dist = 30 + Math.random() * 20;
             let px = yawObj.position.x + Math.cos(angle) * dist; let pz = yawObj.position.z + Math.sin(angle) * dist;
@@ -73,8 +81,18 @@ export function spawnSurvivalZombies(zombieData) {
             }
 
             mesh.position.set(px, zData.height/2, pz); scene.add(mesh);
+            
+            let finalHp = zData.hp;
+            if (state.multiplayerDuo) {
+                if (type.includes('Purple') || type.includes('Black')) {
+                    finalHp *= 1.75;
+                } else {
+                    finalHp *= 1.25;
+                }
+            }
+
             const zObj = { 
-                mesh, type, hp: zData.hp, maxHp: zData.hp, speed: zData.speed, height: zData.height, radius: 0.5 * zData.scale, isDead: false,
+                mesh, type, hp: finalHp, maxHp: finalHp, speed: zData.speed, height: zData.height, radius: 0.5 * zData.scale, isDead: false,
                 userData: { lastHitTime: 0, dmg: zData.dmg, dmgChance: zData.dmgChance, bonusDmg: zData.bonusDmg, cooldown: zData.cooldown, money: zData.money, blitz: zData.blitz, stunnedUntil: 0 }
             };
             mesh.userData.zombieData = zObj; mesh.children.forEach(c => { c.userData.zombieData = zObj; if(c.children) c.children.forEach(cc => cc.userData.zombieData = zObj); });

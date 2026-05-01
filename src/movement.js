@@ -5,37 +5,115 @@ import { buildWeaponMesh } from './weapons.js';
 import { spawnZombies } from './zombies.js';
 import { initAudio, decodeSounds } from './audio.js';
 
-export function setupEventListeners() {
+export function setupEventListeners(socket) {
+    let pendingMode = null;
+
     document.getElementById('btnTester').addEventListener('click', () => {
-        state.gameMode = 'tester';
+        pendingMode = 'tester';
         document.getElementById('modeSelectScreen').style.display = 'none';
         document.getElementById('startScreen').style.display = 'flex';
         updateBrightness();
     });
 
     document.getElementById('btnSurvival').addEventListener('click', () => {
-        state.gameMode = 'survival';
+        pendingMode = 'survival';
         document.getElementById('modeSelectScreen').style.display = 'none';
         
         document.getElementById('startScreen').style.display = 'flex';
         document.getElementById('startScreen').querySelector('h1').innerText = "SURVIVAL MODE";
         document.getElementById('startScreen').querySelector('p').innerText = "Infinite Zig-Zag World 3D";
         
-        document.querySelector('.hud-container').style.display = 'none';
-        document.getElementById('survivalHud').style.display = 'block';
-        
-        document.querySelector('.controls-help').innerHTML = "[W,A,S,D]: Move | [SPACE]: Jump | [SHIFT]: Run<br>[C]: Slide |[SCROLL WHEEL] or[1,2,3]: Swap Weapons<br>[LEFT CLICK]: Shoot | [RIGHT CLICK]: ADS (Aim)<br>[R]: Reload | [F]: Buy Station | [B]: Quick Band-Aid<br>[P]: Brightness Settings | [M] / [N]: Cheat Codes<br>[ESC] or[CTRL]: Pause Game";
-        
         updateBrightness();
-        buildWeaponMesh(getActiveWeaponId());
     });
 
-    document.getElementById('startBtn').addEventListener('click', () => {
+    document.getElementById('queueDuoBtn').addEventListener('click', () => {
+        if (!socket) return;
+        const name = document.getElementById('playerNameInput').value || 'Anonymous';
+        socket.emit('joinQueue', { mode: pendingMode, name });
+        const btn = document.getElementById('queueDuoBtn');
+        btn.innerText = "Waiting...";
+        btn.style.pointerEvents = "none";
+    });
+
+    window.addEventListener('queueUpdate', (e) => {
+        const queues = e.detail;
+        
+        const renderQueue = (queueData, containerId, mode) => {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            for (let id in queueData) {
+                const div = document.createElement('div');
+                div.style.padding = '10px';
+                div.style.background = 'rgba(0,255,157,0.2)';
+                div.style.borderRadius = '5px';
+                div.style.display = 'flex';
+                div.style.justifyContent = 'space-between';
+                div.style.alignItems = 'center';
+
+                const nameSpan = document.createElement('span');
+                nameSpan.innerText = queueData[id];
+
+                const btn = document.createElement('button');
+                btn.className = 'start-btn';
+                btn.style.margin = '0';
+                btn.style.padding = '5px 15px';
+                btn.style.fontSize = '1rem';
+                btn.innerText = 'Play Duo';
+
+                btn.onclick = () => {
+                    if (id !== socket.id) {
+                        socket.emit('joinDuo', { targetId: id, mode: mode });
+                    }
+                };
+
+                // Prevent clicking if it's our own name
+                if (id === socket.id) {
+                    btn.disabled = true;
+                    btn.innerText = 'You';
+                    btn.style.background = '#555';
+                    btn.style.color = '#ccc';
+                    btn.style.boxShadow = 'none';
+                    btn.style.borderColor = '#555';
+                    btn.style.cursor = 'default';
+                }
+
+                div.appendChild(nameSpan);
+                div.appendChild(btn);
+                container.appendChild(div);
+            }
+        };
+
+        renderQueue(queues.tester, 'testerQueueList', 'tester');
+        renderQueue(queues.survival, 'survivalQueueList', 'survival');
+    });
+
+    const startGame = (mode, isDuo) => {
+        state.gameMode = mode;
+        state.multiplayerDuo = isDuo;
+        document.getElementById('modeSelectScreen').style.display = 'none';
         document.getElementById('startScreen').style.display = 'none';
+
+        if (mode === 'survival') {
+            document.querySelector('.hud-container').style.display = 'none';
+            document.getElementById('survivalHud').style.display = 'block';
+            document.querySelector('.controls-help').innerHTML = "[W,A,S,D]: Move | [SPACE]: Jump | [SHIFT]: Run<br>[C]: Slide |[SCROLL WHEEL] or[1,2,3]: Swap Weapons<br>[LEFT CLICK]: Shoot | [RIGHT CLICK]: ADS (Aim)<br>[R]: Reload | [F]: Buy Station | [B]: Quick Band-Aid<br>[P]: Brightness Settings | [M] / [N]: Cheat Codes<br>[ESC] or[CTRL]: Pause Game";
+        }
+        
+        buildWeaponMesh(getActiveWeaponId());
         initAudio();
         decodeSounds();
         document.body.requestPointerLock();
         if (state.gameMode === 'survival') updateSurvivalHUD();
+    };
+
+    window.addEventListener('startDuo', (e) => {
+        const data = e.detail;
+        startGame(data.mode, true);
+    });
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+        startGame(pendingMode, false);
     });
 
     document.getElementById('exitBtn').addEventListener('click', () => {

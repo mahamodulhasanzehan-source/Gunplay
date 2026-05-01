@@ -25,36 +25,93 @@ async function startServer() {
     }
 
     const PLAYERS = {};
-    const BULLETS = [];
+    const queues = { tester: {}, survival: {} };
 
     io.on('connection', (socket) => {
         console.log('Player connected:', socket.id);
         
-        PLAYERS[socket.id] = { id: socket.id, x: 0, y: 2, z: 0, pitch: 0, yaw: 0, mode: null, hp: 100, weaponId: 'pistol' };
+        PLAYERS[socket.id] = { id: socket.id, x: 0, y: 2, z: 0, pitch: 0, yaw: 0, mode: null, hp: 100, weaponId: 'pistol', room: socket.id, colorIndex: 0 };
+        socket.join(socket.id); // Default solo room
         
         socket.emit('init', { id: socket.id, players: PLAYERS });
-        socket.broadcast.emit('playerJoined', PLAYERS[socket.id]);
+        socket.emit('queueUpdate', queues);
+        // Wait, playerJoined should only be sent to the same room. We will send it later when joining a room.
+
+        socket.on('joinQueue', (data) => {
+            // data: { mode: 'tester' | 'survival', name: string }
+            if (queues.tester[socket.id]) delete queues.tester[socket.id];
+            if (queues.survival[socket.id]) delete queues.survival[socket.id];
+            
+            queues[data.mode][socket.id] = data.name || 'Anonymous';
+            io.emit('queueUpdate', queues);
+        });
+
+        socket.on('leaveQueue', () => {
+            delete queues.tester[socket.id];
+            delete queues.survival[socket.id];
+            io.emit('queueUpdate', queues);
+        });
+
+        socket.on('joinDuo', (data) => {
+            // data: { targetId, mode }
+            const targetId = data.targetId;
+            if (queues[data.mode][targetId]) {
+                // Remove both from queue
+                delete queues.tester[targetId];
+                delete queues.survival[targetId];
+                delete queues.tester[socket.id];
+                delete queues.survival[socket.id];
+                io.emit('queueUpdate', queues);
+
+                const roomName = 'duo_' + Date.now();
+                socket.join(roomName);
+                
+                // Target needs to join the room
+                const targetSocket = io.sockets.sockets.get(targetId);
+                if (targetSocket) {
+                    targetSocket.join(roomName);
+                    // Leave default solo rooms
+                    targetSocket.leave(targetId);
+                    PLAYERS[targetId].room = roomName;
+                    PLAYERS[targetId].colorIndex = 1; // Blue
+                    PLAYERS[targetId].mode = data.mode;
+                }
+                
+                socket.leave(socket.id);
+                PLAYERS[socket.id].room = roomName;
+                PLAYERS[socket.id].colorIndex = 2; // Green
+                PLAYERS[socket.id].mode = data.mode;
+
+                // Tell both players game is starting
+                io.to(roomName).emit('startDuo', { mode: data.mode, room: roomName, players: [targetId, socket.id] });
+                
+                // Tell each other they joined
+                io.to(roomName).emit('playerJoined', PLAYERS[targetId]);
+                io.to(roomName).emit('playerJoined', PLAYERS[socket.id]);
+            }
+        });
 
         socket.on('update', (data) => {
             if (PLAYERS[socket.id]) {
+                const room = PLAYERS[socket.id].room;
                 Object.assign(PLAYERS[socket.id], data);
-                socket.broadcast.emit('playerMoved', PLAYERS[socket.id]);
+                socket.to(room).emit('playerMoved', PLAYERS[socket.id]);
             }
         });
 
         socket.on('shoot', (data) => {
-            // data: { start: {x,y,z}, dir: {x,y,z}, weaponId, hitscan: boolean, endPoint: {x,y,z} }
-            socket.broadcast.emit('playerShoot', { id: socket.id, ...data });
+            const room = PLAYERS[socket.id] ? PLAYERS[socket.id].room : socket.id;
+            socket.to(room).emit('playerShoot', { id: socket.id, ...data });
         });
 
         socket.on('hit', (data) => {
-            // data: { targetId, damage }
             if (PLAYERS[data.targetId]) {
+                const room = PLAYERS[socket.id] ? PLAYERS[socket.id].room : socket.id;
                 PLAYERS[data.targetId].hp -= data.damage;
-                io.emit('playerHit', { id: data.targetId, hp: PLAYERS[data.targetId].hp, attackerId: socket.id });
+                io.to(room).emit('playerHit', { id: data.targetId, hp: PLAYERS[data.targetId].hp, attackerId: socket.id });
                 
                 if (PLAYERS[data.targetId].hp <= 0) {
-                    io.emit('playerDied', { id: data.targetId, attackerId: socket.id });
+                    io.to(room).emit('playerDied', { id: data.targetId, attackerId: socket.id });
                     PLAYERS[data.targetId].hp = 100; // Reset hp for respawn
                 }
             }
@@ -62,8 +119,12 @@ async function startServer() {
 
         socket.on('disconnect', () => {
             console.log('Player disconnected:', socket.id);
+            const room = PLAYERS[socket.id] ? PLAYERS[socket.id].room : socket.id;
             delete PLAYERS[socket.id];
-            io.emit('playerLeft', socket.id);
+            delete queues.tester[socket.id];
+            delete queues.survival[socket.id];
+            io.emit('queueUpdate', queues);
+            socket.to(room).emit('playerLeft', socket.id);
         });
     });
 

@@ -11,17 +11,29 @@
 
     <div id="modeSelectScreen">
         <h1 class="title-glow">GUNPLAY</h1>
-        <p style="font-size: 1.5rem; color: #aaa; margin-bottom: 50px; text-transform: uppercase; letter-spacing: 3px;">Select Game Mode</p>
+        <input type="text" id="playerNameInput" placeholder="Enter your name" style="padding: 10px; font-size: 1.2rem; background: rgba(15,15,20,0.85); color: #fff; border: 1px solid #00ff9d; border-radius: 5px; text-align: center; margin-bottom: 20px;">
+        <p style="font-size: 1.5rem; color: #aaa; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 3px;">Select Game Mode</p>
         <div style="display: flex; gap: 30px;">
-            <button class="start-btn" id="btnTester">Gun Tester</button>
-            <button class="start-btn" id="btnSurvival">Survival Mode</button>
+            <button class="start-btn" id="btnTester" style="margin-top: 0;">Gun Tester</button>
+            <button class="start-btn" id="btnSurvival" style="margin-top: 0;">Survival Mode</button>
+        </div>
+        <div style="display: flex; gap: 50px; margin-top: 50px; width: 80%; justify-content: space-around;">
+            <div id="testerQueueCol" style="flex: 1; background: rgba(15,15,20,0.8); border: 1px solid #00ff9d; border-radius: 5px; padding: 20px; text-align: center; color: white;">
+                <h2>Gun Tester Duo Queue</h2>
+                <div id="testerQueueList" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+            <div id="survivalQueueCol" style="flex: 1; background: rgba(15,15,20,0.8); border: 1px solid #00ff9d; border-radius: 5px; padding: 20px; text-align: center; color: white;">
+                <h2>Survival Duo Queue</h2>
+                <div id="survivalQueueList" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
         </div>
     </div>
 
     <div id="startScreen">
         <h1 class="title-glow" style="font-size: 4rem;">Gunplay</h1>
         <p style="font-size: 1.2rem; color: #bbb;">Multiplayer Enabled</p>
-        <button class="start-btn" id="startBtn">Click to Start</button>
+        <button class="start-btn" id="startBtn">Click to Start (Solo)</button>
+        <button class="start-btn" id="queueDuoBtn" style="margin-top: 10px;">Play Duo</button>
         <button class="start-btn" id="exitBtn" style="display: none; margin-top: 10px;">Exit</button>
         <p style="margin-top: 20px; color: #888;">Ensure audio is enabled.</p>
     </div>
