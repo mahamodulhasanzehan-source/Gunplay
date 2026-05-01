@@ -11,8 +11,16 @@ const playerMat = new THREE.MeshLambertMaterial({ color: 0xff4444 });
 const headGeo = new THREE.BoxGeometry(1, 1, 1);
 const bodyGeo = new THREE.BoxGeometry(1, 1.5, 0.5);
 
+export function getMyId() {
+    return myId || (socket ? socket.id : null);
+}
+
 export function initMultiplayer() {
     socket = io();
+
+    socket.on('connect', () => {
+        console.log('Socket connected:', socket.id);
+    });
 
     socket.on('init', (data) => {
         myId = data.id;
@@ -25,6 +33,8 @@ export function initMultiplayer() {
         // UI code expects this to update the lobby screen columns
         const evt = new CustomEvent('queueUpdate', { detail: queues });
         window.dispatchEvent(evt);
+        // Also store it globally for late listeners
+        window.lastQueues = queues;
     });
 
     socket.on('startDuo', (data) => {
